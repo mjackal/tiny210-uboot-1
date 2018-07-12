@@ -317,6 +317,7 @@ include $(srctree)/scripts/Kbuild.include
 
 # Make variables (CC, etc...)
 
+CROSS_COMPILE = arm-none-linux-gnueabi-
 AS		= $(CROSS_COMPILE)as
 # Always use GNU ld
 ifneq ($(shell $(CROSS_COMPILE)ld.bfd -v 2> /dev/null),)
