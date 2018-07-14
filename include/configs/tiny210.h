@@ -21,6 +21,8 @@
 #define CONFIG_S5PC100		1	/* which is in a S5PC100 */
 #define CONFIG_SMDKC100		1	/* working with SMDKC100 */
 
+#define CONFIG_SPL
+
 #include <asm/arch/cpu.h>		/* get chip and board defs */
 
 #define CONFIG_ARCH_CPU_INIT

@@ -63,6 +63,11 @@ lowlevel_init:
 	/* for TZPC */
 	bl tzpc_asm_init
 
+#ifdef CONFIG_SPL_BUILD
+	bl system_clock_init      /*init system clock*/
+	/*bl ddr_init			      ddr init*/
+#endif
+
 1:
 	mov	lr, r9
 	mov	pc, lr
@@ -72,52 +77,88 @@ lowlevel_init:
  * void system_clock_init(void)
  */
 system_clock_init:
-	ldr	r8, =S5PC100_CLOCK_BASE		@ 0xE0100000
+#define	  APLL_CON0	   0xE0100100  @FOUT_APLL = 1000 MHZ
+#define   APLL_VAL     ((1<<31)|(125<<16)|(3<<8)|(1<<0))    
+         
+#define	  MPLL_CON     0xE0100108  @FOUT_MPLL = 667 MHZ
+#define   MPLL_VAL     ((1<<31)|(667<<16)|(12<<8)|(1<<0)) 
+		  
+#define	  EPLL_CON0    0xE0100110  @FOUT_EPLL = 96 MHZ
+#define   EPLL_VAL     ((1<<31)|(48<<16)|(3<<8)|(2<<0)) 
+		   
+#define	  VPLL_CON 	   0xE0100120  @FOUT_VPLL = 54 MHZ
+#define   VPLL_VAL     ((1<<31)|(108<<16)|(6<<8)|(3<<0)) 
+		    
+@ MOUT_MSYS = SCLKAPLL = FOUT_APLL = 1000MHz
+@ MOUT_DSYS = SCLKMPLL = FOUT_MPLL = 667MHz
+@ MOUT_PSYS = SCLKMPLL = FOUT_MPLL = 667MHz
+@ ONENAND = HCLK_PSYS
+			 
+#define   CLK_SRC0     0xE0100200
+#define   SRC0_VAL     ((1<<0)|(1<<4)|(1<<8)|(1<<12))
+			  
+@ APLL_RATIO = 0, freq(ARMCLK) = MOUT_MSYS / (APLL_RATIO + 1) = 1000MHz */
+@ A2M_RATIO = 4, freq(A2M) = SCLKAPLL / (A2M_RATIO + 1) = 200MHz */
+@ HCLK_MSYS_RATIO = 4, freq(HCLK_MSYS) = ARMCLK / (HCLK_MSYS_RATIO + 1) = 200MHz */
+@ PCLK_MSYS_RATIO = 1, freq(PCLK_MSYS) = HCLK_MSYS / (PCLK_MSYS_RATIO + 1) = 100MHz */
+@ HCLK_DSYS_RATIO = 3, freq(HCLK_DSYS) = MOUT_DSYS / (HCLK_DSYS_RATIO + 1) = 166MHz */
+@ PCLK_DSYS_RATIO = 1, freq(PCLK_DSYS) = HCLK_DSYS / (PCLK_DSYS_RATIO + 1) = 83MHz */
+@ HCLK_PSYS_RATIO = 4, freq(HCLK_PSYS) = MOUT_PSYS / (HCLK_PSYS_RATIO + 1) = 133MHz */
+@ PCLK_PSYS_RATIO = 1, freq(PCLK_PSYS) = HCLK_PSYS / (PCLK_PSYS_RATIO + 1) = 66MHz */
+			   
+#define   CLK_DIV0 0xE0100300
+#define	  DIV0_VAL 	((0<<0)|(4<<4)|(4<<8)|(1<<12)|(3<<16)|(1<<20)|(4<<24)|(1<<28))	
 
-	/* Set Clock divider */
-	ldr	r1, =0x00011110
-	str	r1, [r8, #0x304]
-	ldr	r1, =0x1
-	str	r1, [r8, #0x308]
-	ldr	r1, =0x00011301
-	str	r1, [r8, #0x300]
+/*
+ * system_clock_init: Initialize core clock and bus clock.
+ * void system_clock_init(void)
+ */
+system_clock_init:
+	@ref: page 364 spec
 
-	/* Set Lock Time */
-	ldr	r1, =0xe10			@ Locktime : 0xe10 = 3600
-	str	r1, [r8, #0x000]		@ APLL_LOCK
-	str	r1, [r8, #0x004]		@ MPLL_LOCK
-	str	r1, [r8, #0x008]		@ EPLL_LOCK
-	str	r1, [r8, #0x00C]		@ HPLL_LOCK
+	@Turn on a PLL
+	@(A,M,E,V)PLL_CON[31]=1
 
-	/* APLL_CON */
-	ldr	r1, =0x81bc0400		@ SDIV 0, PDIV 4, MDIV 444 (1332MHz)
-	str	r1, [r8, #0x100]
-	/* MPLL_CON */
-	ldr	r1, =0x80590201		@ SDIV 1, PDIV 2, MDIV 89 (267MHz)
-	str	r1, [r8, #0x104]
-	/* EPLL_CON */
-	ldr	r1, =0x80870303		@ SDIV 3, PDIV 3, MDIV 135 (67.5MHz)
-	str	r1, [r8, #0x108]
-	/* HPLL_CON */
-	ldr	r1, =0x80600603
-	str	r1, [r8, #0x10C]
+	@wait_lock_time, wait until PLL is locked
 
-	/* Set Source Clock */
-	ldr	r1, =0x1111			@ A, M, E, HPLL Muxing
-	str	r1, [r8, #0x200]		@ CLK_SRC0
+	@(A,M,E,V)PLL_SEL=1
 
-	ldr	r1, =0x1000001			@ Uart Clock & CLK48M Muxing
-	str	r1, [r8, #0x204]		@ CLK_SRC1
+	@Change PLL's PMS values
 
-	ldr	r1, =0x9000			@ ARMCLK/4
-	str	r1, [r8, #0x400]		@ CLK_OUT
+	@Set PMS values, (A,M,E,V)PLL_CON SFR
 
-	/* wait at least 200us to stablize all clock */
-	mov	r2, #0x10000
-1:	subs	r2, r2, #1
-	bne	1b
+	@Change the system clock divider values
+	@CLK_DIV0[31:0] =target value0
 
-	mov	pc, lr
+	@Change the divider values for specical clocks
+	@CLK_DIV1[31:0] = target value1
+	@CLK_DIV2[31:0] = target value2
+
+	ldr r0, =CLK_SRC0
+	ldr r1, =SRC0_VAL
+	str r1, [r0]
+
+	ldr r0, =APLL_CON0
+	ldr r1, =APLL_VAL
+	str r1, [r0]
+
+	ldr r0, =MPLL_CON
+	ldr r1, =MPLL_VAL
+	str r1, [r0]
+
+	ldr r0, =EPLL_CON0
+	ldr r1, =EPLL_VAL
+	str r1, [r0]
+
+	ldr r0, =VPLL_CON
+	ldr r1, =VPLL_VAL
+	str r1, [r0]
+
+	ldr r0, =CLK_DIV0
+	ldr r1, =DIV0_VAL
+	str r1, [r0]
+
+	mov pc, lr
 
 /*
  * uart_asm_init: Initialize UART's pins
