@@ -27,7 +27,7 @@ lowlevel_init:
 
 #ifdef CONFIG_SPL_BUILD
 	bl system_clock_init      /*init system clock*/
-	/*bl ddr_init			      ddr init*/
+	bl ddr_init			      /*ddr init*/
 #endif
 
 	ldr r3, =0x1
