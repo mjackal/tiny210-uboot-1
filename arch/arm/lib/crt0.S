@@ -61,17 +61,25 @@ ENTRY(_main)
  * Set up initial C runtime environment and call board_init_f(0).
  */
 
-#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_STACK)
-	ldr	sp, =(CONFIG_SPL_STACK)
-#else
+#if !defined(CONFIG_SPL_BUILD)
 	ldr	sp, =(CONFIG_SYS_INIT_SP_ADDR)
-#endif
 	bic	sp, sp, #7	/* 8-byte alignment for ABI compliance */
 	sub	sp, sp, #GD_SIZE	/* allocate one GD above SP */
 	bic	sp, sp, #7	/* 8-byte alignment for ABI compliance */
 	mov	r9, sp		/* GD is above SP */
 	mov	r0, #0
-	/* bl	board_init_f */
+#endif
+
+#if defined(CONFIG_SPL_BUILD)
+	bl copy_bl2_to_ram /* copy bl2 to DDR */
+
+	ldr r3, =0x7
+	bl lowlevel_init_led_debug
+
+	ldr pc, =CONFIG_SYS_SDRAM_BASE /* long jump to DDR linked TEXT address */
+#else
+	bl	board_init_f
+#endif
 
 #if ! defined(CONFIG_SPL_BUILD)
 

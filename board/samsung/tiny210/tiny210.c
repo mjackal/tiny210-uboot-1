@@ -183,3 +183,30 @@ void ddr_init(void)
 
 }
 #endif
+
+void copy_bl2_to_ram(void)
+{
+ /*
+  * Actually Samsung have orderd the copy functions
+  * ch: channel
+  * sb: start block
+  * bs: block size
+  * dst: dest address
+  * i: need initlization
+  */
+#define CopySDMMCtoMem(ch, sb, bs, dst, i) \
+	(((unsigned char(*)(int, unsigned int, unsigned short, unsigned int*, unsigned char)) \
+	(*((unsigned int *)0xD0037F98)))(ch, sb, bs, dst, i)) 
+	/* covert this address to a copy function */
+	
+	unsigned int V210_SDMMC_BASE = *(volatile unsigned int *)(0xD0037488);
+	unsigned char ch = 0;
+
+	/* ref to spec: 7.9.1 SD/MMC register map */
+	if (V210_SDMMC_BASE == 0xEB000000)
+		ch = 0;
+    else if (V210_SDMMC_BASE == 0xEB200000)	
+		ch = 2;
+
+	CopySDMMCtoMem(ch, 32, 400, (unsigned int*)CONFIG_SYS_SDRAM_BASE, 0);
+}

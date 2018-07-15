@@ -30,19 +30,20 @@ lowlevel_init:
 	bl ddr_init			      /*ddr init*/
 #endif
 
-	ldr r3, =0x1
-	bl lowlevel_init_led_debug
+	/* ldr r3, =0x1 */
+	/* bl lowlevel_init_led_debug */
 
 1:
 	mov	lr, r9
 	mov	pc, lr
 
-
+.global lowlevel_init_led_debug
 lowlevel_init_led_debug:
 	ldr r0, =GPJ2CON //ldr: load address
 	ldr r1, =0x00001111 //set led1~4 as output
 	str r1, [r0] //r1 -> [r0]
 
+loop:
 	ldr r0, =GPJ2DAT
 	ldr r1, =(1<<0|1<<1|1<<2|1<<3) //turn off all led
 	str r1, [r0]
@@ -51,6 +52,9 @@ lowlevel_init_led_debug:
 	mvn r2, r3
 	and r1, r2, #0xF
 	str r1, [r0]
+	
+/*	b loop*/
+	
 	
 	mov pc, lr
 
