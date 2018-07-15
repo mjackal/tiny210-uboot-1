@@ -11,101 +11,48 @@
 #include <asm/arch/cpu.h>
 #include <asm/arch/power.h>
 
+/* GPJ for lowlevel_init debug */
+#define GPJ2CON 0xE0200280
+#define GPJ2DAT 0xE0200284
+
 /*
  * Register usages:
  *
  * r5 has zero always
  */
 
-#define GPJ2CON 0xE0200280
-#define GPJ2DAT 0xE0200284
 	.globl lowlevel_init
 lowlevel_init:
-
-	ldr r0, =0xE0200280 //ldr: load address
-	ldr r1, =0x00001111 //set led1~4 as output
-	str r1, [r0] //r1 -> [r0]
-	//led blink
-led_blink:
-	ldr r0, =0xE0200284 //GPJDAT
-	ldr r1, =(0<<0|0<<1|0<<2|0<<3)
-	str r1, [r0]
-
-	bl delay
-	
-	ldr r0, =0xE0200284
-	ldr r1, =(1<<0|1<<1|1<<2|1<<3) //led off
-	str r1, [r0]
-
-	bl delay
-
-	b led_blink
-
-delay:
-	ldr r2, =0x01FFFFFF
-	ldr r3, =0x0
-loop:
-	sub r2, r2, #1
-	cmp r2, r3
-	bne loop
-	mov pc, lr
-
-
-
-
 	mov	r9, lr
-
-	/* r5 has always zero */
-	mov	r5, #0
-
-	ldr	r8, =S5PC100_GPIO_BASE
-
-	/* Disable Watchdog */
-	ldr	r0, =S5PC100_WATCHDOG_BASE		@0xEA200000
-	orr	r0, r0, #0x0
-	str	r5, [r0]
-
-	/* setting SRAM */
-	ldr	r0, =S5PC100_SROMC_BASE
-	ldr	r1, =0x9
-	str	r1, [r0]
-
-	/* S5PC100 has 3 groups of interrupt sources */
-	ldr	r0, =S5PC100_VIC0_BASE			@0xE4000000
-	ldr	r1, =S5PC100_VIC1_BASE			@0xE4000000
-	ldr	r2, =S5PC100_VIC2_BASE			@0xE4000000
-
-	/* Disable all interrupts (VIC0, VIC1 and VIC2) */
-	mvn	r3, #0x0
-	str	r3, [r0, #0x14]				@INTENCLEAR
-	str	r3, [r1, #0x14]				@INTENCLEAR
-	str	r3, [r2, #0x14]				@INTENCLEAR
-
-	/* Set all interrupts as IRQ */
-	str	r5, [r0, #0xc]				@INTSELECT
-	str	r5, [r1, #0xc]				@INTSELECT
-	str	r5, [r2, #0xc]				@INTSELECT
-
-	/* Pending Interrupt Clear */
-	str	r5, [r0, #0xf00]			@INTADDRESS
-	str	r5, [r1, #0xf00]			@INTADDRESS
-	str	r5, [r2, #0xf00]			@INTADDRESS
-
-	/* for UART */
-	bl uart_asm_init
-
-	/* for TZPC */
-	bl tzpc_asm_init
 
 #ifdef CONFIG_SPL_BUILD
 	bl system_clock_init      /*init system clock*/
 	/*bl ddr_init			      ddr init*/
 #endif
 
+	ldr r3, =0x1
+	bl lowlevel_init_led_debug
 
 1:
 	mov	lr, r9
 	mov	pc, lr
+
+
+lowlevel_init_led_debug:
+	ldr r0, =GPJ2CON //ldr: load address
+	ldr r1, =0x00001111 //set led1~4 as output
+	str r1, [r0] //r1 -> [r0]
+
+	ldr r0, =GPJ2DAT
+	ldr r1, =(1<<0|1<<1|1<<2|1<<3) //turn off all led
+	str r1, [r0]
+
+	ldr r0, =GPJ2DAT
+	mvn r2, r3
+	and r1, r2, #0xF
+	str r1, [r0]
+	
+	mov pc, lr
 
 /*
  * system_clock_init: Initialize core clock and bus clock.
