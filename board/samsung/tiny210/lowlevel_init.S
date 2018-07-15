@@ -17,8 +17,42 @@
  * r5 has zero always
  */
 
+#define GPJ2CON 0xE0200280
+#define GPJ2DAT 0xE0200284
 	.globl lowlevel_init
 lowlevel_init:
+
+	ldr r0, =0xE0200280 //ldr: load address
+	ldr r1, =0x00001111 //set led1~4 as output
+	str r1, [r0] //r1 -> [r0]
+	//led blink
+led_blink:
+	ldr r0, =0xE0200284 //GPJDAT
+	ldr r1, =(0<<0|0<<1|0<<2|0<<3)
+	str r1, [r0]
+
+	bl delay
+	
+	ldr r0, =0xE0200284
+	ldr r1, =(1<<0|1<<1|1<<2|1<<3) //led off
+	str r1, [r0]
+
+	bl delay
+
+	b led_blink
+
+delay:
+	ldr r2, =0x01FFFFFF
+	ldr r3, =0x0
+loop:
+	sub r2, r2, #1
+	cmp r2, r3
+	bne loop
+	mov pc, lr
+
+
+
+
 	mov	r9, lr
 
 	/* r5 has always zero */
@@ -67,6 +101,7 @@ lowlevel_init:
 	bl system_clock_init      /*init system clock*/
 	/*bl ddr_init			      ddr init*/
 #endif
+
 
 1:
 	mov	lr, r9

@@ -112,6 +112,62 @@ struct s5pc110_gpio {
 	struct s5p_gpio_bank h3;
 };
 
+struct s5pv210_gpio {
+	struct s5p_gpio_bank a0;
+	struct s5p_gpio_bank a1;
+	struct s5p_gpio_bank b;
+	struct s5p_gpio_bank c0;
+	struct s5p_gpio_bank c1;
+	struct s5p_gpio_bank d0;
+	struct s5p_gpio_bank d1;
+	struct s5p_gpio_bank e0;
+	struct s5p_gpio_bank e1;
+	struct s5p_gpio_bank f0;
+	struct s5p_gpio_bank f1;
+	struct s5p_gpio_bank f2;
+	struct s5p_gpio_bank f3;
+	struct s5p_gpio_bank g0;
+	struct s5p_gpio_bank g1;
+	struct s5p_gpio_bank g2;
+	struct s5p_gpio_bank g3;
+	struct s5p_gpio_bank i;
+	struct s5p_gpio_bank j0;
+	struct s5p_gpio_bank j1;
+	struct s5p_gpio_bank j2;
+	struct s5p_gpio_bank j3;
+	struct s5p_gpio_bank j4;
+	struct s5p_gpio_bank mp0_1;
+	struct s5p_gpio_bank mp0_2;
+	struct s5p_gpio_bank mp0_3;
+	struct s5p_gpio_bank mp0_4;
+	struct s5p_gpio_bank mp0_5;
+	struct s5p_gpio_bank mp0_6;
+	struct s5p_gpio_bank mp0_7;
+	struct s5p_gpio_bank mp1_0;
+	struct s5p_gpio_bank mp1_1;
+	struct s5p_gpio_bank mp1_2;
+	struct s5p_gpio_bank mp1_3;
+	struct s5p_gpio_bank mp1_4;
+	struct s5p_gpio_bank mp1_5;
+	struct s5p_gpio_bank mp1_6;
+	struct s5p_gpio_bank mp1_7;
+	struct s5p_gpio_bank mp1_8;
+	struct s5p_gpio_bank mp2_0;
+	struct s5p_gpio_bank mp2_1;
+	struct s5p_gpio_bank mp2_2;
+	struct s5p_gpio_bank mp2_3;
+	struct s5p_gpio_bank mp2_4;
+	struct s5p_gpio_bank mp2_5;
+	struct s5p_gpio_bank mp2_6;
+	struct s5p_gpio_bank mp2_7;
+	struct s5p_gpio_bank mp2_8;
+	struct s5p_gpio_bank res1[48];
+	struct s5p_gpio_bank h0;
+	struct s5p_gpio_bank h1;
+	struct s5p_gpio_bank h2;
+	struct s5p_gpio_bank h3;
+};
+
 /* functions */
 void s5p_gpio_cfg_pin(struct s5p_gpio_bank *bank, int gpio, int cfg);
 void s5p_gpio_direction_output(struct s5p_gpio_bank *bank, int gpio, int en);
@@ -150,6 +206,11 @@ void s5p_gpio_set_rate(struct s5p_gpio_bank *bank, int gpio, int mode);
 			S5PC110_GPIO_BASE)->bank) - S5PC110_GPIO_BASE) \
 			& S5P_GPIO_BANK_MASK) << S5P_GPIO_BANK_SHIFT)
 
+#define S5PV210_SET_BANK(bank) \
+			((((unsigned)&(((struct s5pv210_gpio *) \
+			S5PV210_GPIO_BASE)->bank) - S5PV210_GPIO_BASE) \
+			& S5P_GPIO_BANK_MASK) << S5P_GPIO_BANK_SHIFT)
+
 #define s5pc100_gpio_get(bank, pin) \
 			(S5P_GPIO_SET_PART(0) | \
 			S5PC100_SET_BANK(bank) | \
@@ -158,6 +219,11 @@ void s5p_gpio_set_rate(struct s5p_gpio_bank *bank, int gpio, int mode);
 #define s5pc110_gpio_get(bank, pin) \
 			(S5P_GPIO_SET_PART(0) | \
 			S5PC110_SET_BANK(bank) | \
+			S5P_GPIO_SET_PIN(pin))
+
+#define s5pv210_gpio_get(bank, pin) \
+			(S5P_GPIO_SET_PART(0) | \
+			S5PV210_SET_BANK(bank) | \
 			S5P_GPIO_SET_PIN(pin))
 
 static inline unsigned int s5p_gpio_base(int nr)

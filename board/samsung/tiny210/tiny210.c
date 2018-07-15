@@ -11,8 +11,14 @@
 #include <asm/arch/sromc.h>
 #include <asm/arch/gpio.h>
 #include <netdev.h>
+#include <asm/gpio.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+
+
+/* led gpio register address */
+#define GPJ_CON 0xE0200280
+#define GPJ_DAT 0xE0200284
 
 /*
  * Miscellaneous platform dependent initialisations
@@ -20,8 +26,7 @@ DECLARE_GLOBAL_DATA_PTR;
 static void smc9115_pre_init(void)
 {
 	u32 smc_bw_conf, smc_bc_conf;
-
-	struct s5pc100_gpio *const gpio =
+struct s5pc100_gpio *const gpio =
 		(struct s5pc100_gpio *)samsung_get_base_gpio();
 
 	/* gpio configuration GPK0CON */
@@ -76,3 +81,20 @@ int board_eth_init(bd_t *bis)
 #endif
 	return rc;
 }
+
+/*
+void tiny210_early_debug(int debug_code)
+{
+	if (debug_code > 0xf)
+		debug_code = 0;
+	writel(0x0001, GPJ_CON);
+	writel(~(~0&debug_code), GPJ_DAT);
+}
+
+#ifdef CONFIG_SPL_BUILD
+void board_init_f(ulong booflag)
+{
+	tiny210_early_debug(0x01);
+}
+#endif
+*/

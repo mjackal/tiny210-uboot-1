@@ -23,6 +23,9 @@
 
 #define CONFIG_SPL
 
+/* #define CONFIG_SPL_STACK	0xD0037D80  using SVC SP */
+#define CONFIG_SPL_STACK	0xD0037FFF /* using SVC SP */
+
 #include <asm/arch/cpu.h>		/* get chip and board defs */
 
 #define CONFIG_ARCH_CPU_INIT
